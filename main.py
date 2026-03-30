@@ -79,8 +79,8 @@ def score_route(waypoints: list, path_len: float, target_len: float, all_pois: l
             poi_data = G.nodes[poi]
 
             # need to convert degrees into meters
-            dist_x = (wp_data["y"] - poi_data["x"]) * 111320 
-            dist_y = (wp_data["y"] - poi_data["x"]) * 110540
+            dist_x = (wp_data["x"] - poi_data["x"]) * 111320 
+            dist_y = (wp_data["y"] - poi_data["y"]) * 110540
 
             # using pythagorean theorem to find the distance between the two points
             dist = (dist_x**2 + dist_y**2) ** 0.5
@@ -106,7 +106,7 @@ target_len = 6437.38 # in meters (approx. 4 miles)
 all_pois = get_pois("Boston, Massachusetts, USA")
 print("Number of Points of Interest:", len(all_pois))
 poi_nodes = [ox.nearest_nodes(G, lon, lat) for lat, lon in all_pois] # converting to long,lat
-waypoints = random.sample(poi_nodes, 4) 
+waypoints = random.sample(poi_nodes, 2) 
 
 print("Building route.....")
 route = build_route(G, origin_node, waypoints)
@@ -156,3 +156,4 @@ ox.plot_graph_route(
 
 # TODO: ignore points that are a certain distance (over half the target distance)
 # TODO: When picking waypoints out of POI's, pick 2 way points that are closest to approx. 1/3 of the distance
+# TODO: we may be calculating the length of the route incorrectly.....
