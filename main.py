@@ -54,7 +54,7 @@ def get_pois(graph) -> list:
     return pois
 
 
-def build_route(G, origin, pois: list):
+def build_route(G, origin, pois: list) -> list:
     """
     Builds a route that puts together shortest paths between nodes to create 
     a good route 
@@ -77,10 +77,43 @@ def build_route(G, origin, pois: list):
     return final_route
 
 
-# can be split into more sub methods 
-def calculate_route() -> list:
-    return []
+# ifes part for scoring a route
+def score_route(waypoints: list, path_len: float, target_len: float, all_pois: list, G) -> float:
+    """
+    waypoints: list of nodes choosen for the route
+    path_len: the actual path length of the route
+    target_len: the intended path length of the route 
+    all_pois: all points of interests in the graph 
+    G: the entire graph 
+    """
 
+    score = 0.0
+
+    # how close we are to the waypoints 
+    for wp in waypoints:
+        wp_data = G.nodes[wp]
+
+        min_dist = float("inf")
+        for poi in all_pois:
+            poi_data = G.nodes[poi]
+
+            # need to convert degrees into meters
+            dist_x = (wp_data["x"] - poi_data["x"]) * 111320 
+            dist_y = (wp_data["y"] - poi_data["x"]) * 110540
+
+            # using pythagorean theorem to find the distance between the two points
+            dist = (dist_x**2 + dist_y**2) ** 0.5
+
+            if dist < min_dist:
+                min_dist = dist
+        
+        score -= min_dist # only care about the poi that are closest to the waypoint 
+
+    # how close the route is to the intended distance 
+    len_error = abs(target_len - path_len) / path_len
+    score -= len_error * 1000
+    
+    return score
 
 
 
