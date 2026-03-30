@@ -2,22 +2,6 @@ import osmnx as ox
 import networkx as nx
 import random 
 
-# used if we are doing local search 
-def obj_fun(traffic_lights: int, busyness: float, lighting: float) -> float:
-    """ Objective function that we want to maximize the overall value
-
-    traffic_lights: the number of traffic lights on this path 
-    busyness: average busyness of this path from scale of 0.0 -> 1.0
-    lighting: how lit a path is of scale from 0.0 -> 1.0; ex. 0.0 is dark, 1.0 is fully lit 
-    """
-
-    value = 0.0
-    value -= traffic_lights
-    value -= busyness
-    value += lighting 
-
-    return value
-
 def init_graph(location, format):
     """ 
     Set up G given an initial location
@@ -30,39 +14,24 @@ def init_graph(location, format):
 
     return G
 
-G = init_graph("Boston, Massachusetts, USA", "place")
-origin_lat, origin_lon = 42.3601, -71.0589
-origin_node = ox.nearest_nodes(G, origin_lon, origin_lat)
-
-# used if doing random points of interest and finding shortest paths between intermediate points
-# need to change this method to find waypoints within a certain distance 
-def is_pois(data) -> bool:
-    """
-    Returns true of the point is a point of interest 
-    """
-
-    if data.get("highway") == "traffic_signals": # can create a list of other conditions like footway or residential 
-        return False
-    
-    if data.get("amenity") in ["park", "drinking_water", "toilets", "cafe", "fountain"]:
-        return True
-    
-    if data.get("tourism") in ["attraction", "viewpoint", "monument"]:
-        return True
-
-    return False
-
-
-def get_pois(graph) -> list:
+def get_pois(place: str) -> list:
     """
     Returns a list of points of interests in a given graph 
+    Gets POI's from OSM and not from looking at the street graph 
     """
     pois = []
+    tags = {
+        "amenity": ["park", "drinking_water", "toilets", "cafe", "fountain"], 
+        "tourism": ["attraction", "viewpoint", "monument"]
+    }
 
-    for node, data in graph.nodes(data=True):
-        if is_pois(data):
-            pois.append(node)
-    
+    gdf = ox.features_from_place(place, tags=tags) # a table of feature name, amenity, and geometry as columns
+
+    for _, row in gdf.iterrows():
+        geometry = row.geometry
+        pois.append((geometry.centroid.y, geometry.centroid.x)) # (latitude, longitude)
+        # .centroid handles where the geometry is a polygon, and instead get its center point
+
     return pois
 
 
@@ -127,10 +96,63 @@ def score_route(waypoints: list, path_len: float, target_len: float, all_pois: l
     
     return score
 
+# testing code above
+print("Starting....")
+G = init_graph("Boston, Massachusetts, USA", "place")
+origin_lat, origin_lon = 42.3601, -71.0589
+origin_node = ox.nearest_nodes(G, origin_lon, origin_lat)
+target_len = 6437.38 # in meters (approx. 4 miles)
 
-# tests 
-print(obj_fun(10, 0.7, 0.1))
-print(obj_fun(1, 0.1, 0.8))
+all_pois = get_pois("Boston, Massachusetts, USA")
+print("Number of Points of Interest:", len(all_pois))
+poi_nodes = [ox.nearest_nodes(G, lon, lat) for lat, lon in all_pois] # converting to long,lat
+waypoints = random.sample(poi_nodes, 4) 
 
-print(obj_fun(3, 0.2, 0.9))  
-print(obj_fun(10, 0.8, 0.1))
+print("Building route.....")
+route = build_route(G, origin_node, waypoints)
+print("Route building finished!")
+
+# finding actual route length 
+print("Finding length of route....")
+actual_route_len = 0
+for u,v in zip(route[:-1], route[1:]):
+    actual_route_len += G[u][v][0]["length"]
+print("Route Length Found!")
+
+print("Calculating score....")
+score = score_route(waypoints, actual_route_len, target_len, poi_nodes, G)
+
+print("************************************")
+print("Finished! Metrics:")
+print("Route Score:", score)
+print("Desired Length:", target_len)
+print("Actual Length:", actual_route_len)
+
+# Buiding a visual for graph and route:
+
+# starting node is green 
+# poi are red (can add specific color for what kind of POI it is and add a key)
+# route line is blue 
+
+node_colors = []
+for node in G.nodes():
+    if node in poi_nodes and node in waypoints:
+        node_colors.append("red")
+    elif node == origin_node:
+        node_colors.append("green")
+    else:
+        node_colors.append("none")
+
+
+ox.plot_graph_route(
+    G, 
+    route,
+    route_color="blue",      
+    route_linewidth=4, 
+    node_color = node_colors,      
+    node_size=20,            
+    bgcolor="white"          
+)
+
+# TODO: ignore points that are a certain distance (over half the target distance)
+# TODO: When picking waypoints out of POI's, pick 2 way points that are closest to approx. 1/3 of the distance
