@@ -18,7 +18,19 @@ def obj_fun(traffic_lights: int, busyness: float, lighting: float) -> float:
 
     return value
 
-G = ox.graph_from_place("Boston, Massachusetts, USA", network_type="walk")
+def init_graph(location, format):
+    """ 
+    Set up G given an initial location
+    """
+    if format == "place":
+        G = ox.graph_from_place(location, network_type="walk")
+
+    if format == "point":
+        G = ox.graph_from_point(location, network_type="walk")
+
+    return G
+
+G = init_graph("Boston, Massachusetts, USA", "place")
 origin_lat, origin_lon = 42.3601, -71.0589
 origin_node = ox.nearest_nodes(G, origin_lon, origin_lat)
 
