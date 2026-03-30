@@ -110,7 +110,7 @@ def score_route(waypoints: list, path_len: float, target_len: float, all_pois: l
             poi_data = G.nodes[poi]
 
             # need to convert degrees into meters
-            dist_x = (wp_data["x"] - poi_data["x"]) * 111320 
+            dist_x = (wp_data["y"] - poi_data["x"]) * 111320 
             dist_y = (wp_data["y"] - poi_data["x"]) * 110540
 
             # using pythagorean theorem to find the distance between the two points
@@ -126,7 +126,6 @@ def score_route(waypoints: list, path_len: float, target_len: float, all_pois: l
     score -= len_error * 1000
     
     return score
-
 
 
 # tests 
