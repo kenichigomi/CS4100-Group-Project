@@ -106,7 +106,7 @@ target_len = 6437.38 # in meters (approx. 4 miles)
 all_pois = get_pois("Boston, Massachusetts, USA")
 print("Number of Points of Interest:", len(all_pois))
 poi_nodes = [ox.nearest_nodes(G, lon, lat) for lat, lon in all_pois] # converting to long,lat
-waypoints = random.sample(poi_nodes, 2) 
+waypoints = random.sample(poi_nodes, 3) 
 
 print("Building route.....")
 route = build_route(G, origin_node, waypoints)
@@ -157,3 +157,11 @@ ox.plot_graph_route(
 # TODO: ignore points that are a certain distance (over half the target distance)
 # TODO: When picking waypoints out of POI's, pick 2 way points that are closest to approx. 1/3 of the distance
 # TODO: we may be calculating the length of the route incorrectly.....
+
+
+# New idea:
+# TODO: Heuristic is how far this state is from the goal distance 
+# always add a node if we are under the distance we want, get rid of a node if we are over
+# the distance we want
+# First, we start by placing 1 poi, then we do what was mentioned above. We keep iterating
+# the state using local search until we reach a distance that is "close enough" using a buffer
