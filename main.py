@@ -37,7 +37,7 @@ def get_pois(place: str) -> list:
 
     return pois
 
-def get_pois_nodes(PLACE: str) -> list:
+def get_pois_nodes(G, PLACE: str) -> list:
     all_pois = get_pois(PLACE)
     return [ox.nearest_nodes(G, lon, lat) for lat, lon in all_pois]
 
@@ -325,7 +325,6 @@ def simulated_annealing(G, start_node, all_poi_nodes, target_distance):
             current_waypoints = new_waypoints
             current_route = new_route
             current_score = new_score
-            # plot_route(G, best_route, origin_node, best_waypoints, poi_nodes, f"{}")
  
         # update best if this is the highest score we've seen
         if current_score > best_score:
@@ -337,11 +336,11 @@ def simulated_annealing(G, start_node, all_poi_nodes, target_distance):
         temperature *= decay
         scores.append(current_score)
  
-        # print progress every 200 steps
-        if (step + 1) % 200 == 0:
-            print(f"step {step+1}: T={temperature:.1f}, "
+        if step % 50 == 0:
+            print(f"step {step}: T={temperature:.1f}, "
                   f"route={new_len:.0f}m, score={current_score:.1f}")
-        if step % 50:
+            print(f'{step=} plotting...')
+            plot_route(G, best_route, start_node, best_waypoints, all_poi_nodes, "route.png")
             plt.plot(scores)
             plt.savefig('scores.png')
             plt.close()
@@ -350,33 +349,73 @@ def simulated_annealing(G, start_node, all_poi_nodes, target_distance):
  
 
 # visualizing the graph 
-def plot_route(G, route, origin_node, waypoint_nodes, poi_nodes, name):
+def plot_route(G, route, origin_node, waypoint_nodes, poi_nodes, name,show=False):
     """Plot the route on the map.
     Green = start, red = visited POIs, blue = route path.
     """
     node_colors = []
+    node_sizes = []
     for node in G.nodes():
-        if node in poi_nodes and node in waypoint_nodes:
-            node_colors.append("red")
-        elif node == origin_node:
+        if node == origin_node:
             node_colors.append("green")
+            node_sizes.append(25)
+        elif node in poi_nodes and node in waypoint_nodes:
+            node_colors.append("red")
+            node_sizes.append(20)
+        elif node in poi_nodes:
+            node_colors.append("red")
+            node_sizes.append(1)
         else:
             node_colors.append("none")
+            node_sizes.append(20)
  
-        ox.plot_graph_route(
-            G, route,
-            route_color="blue",
-            route_linewidth=4,
-            node_color=node_colors,
-            node_size=20,
-            bgcolor="white",
-            close=True,
-            filepath=name, 
-            file_format='png'
-        )
+    ox.plot_graph_route(
+        G, route,
+        route_color="blue",
+        route_linewidth=4,
+        node_color=node_colors,
+        node_size=node_sizes,
+        bgcolor="white",
+        close=True,
+        filepath=name, 
+        save=True, show=show
+    )
 
 
+def main(place, origin_lat, origin_lng, target_miles):
+    target_meters = target_miles * 1609.34
+    # load the street map
+    G = get_and_set(place, lambda: init_graph(place, "place"))
+    print("map loaded")
+
  
+    # find the nearest graph node to our starting coordinates
+    origin_node = ox.nearest_nodes(G, origin_lng, origin_lat)
+ 
+    # get all POIs and snap them to graph nodes
+    poi_nodes = get_and_set(f'pois{place}',lambda: get_pois_nodes(G, place))
+    print(f"found {len(set(poi_nodes))} unique POIS nodes")
+ 
+    # run simulated annealing to find a good route
+    print("trying to optimize route with simulated annealing")
+    best_route, best_waypoints, best_score = simulated_annealing(
+        G, origin_node, poi_nodes, target_meters
+    )
+ 
+    # print results
+    final_length = get_route_length(G, best_route)
+    print()
+    print("route found")
+    print(f"target: {target_meters:.0f}m ({TARGET_MILES} miles)")
+    print(f"actual: {final_length:.0f}m ({final_length/1609.34:.2f} miles)")
+    print(f"error:  {abs(final_length - target_meters):.0f}m")
+    print(f"stops:  {len(best_waypoints)} waypoints")
+    print(f"score:  {best_score:.1f}")
+ 
+    # show the route on a map
+    plot_route(G, best_route, origin_node, best_waypoints, poi_nodes, f"best route.png")
+ 
+
 # main command
 if __name__ == "__main__":
  
@@ -384,36 +423,5 @@ if __name__ == "__main__":
     ORIGIN_LAT, ORIGIN_LON = 42.3601, -71.0589
     ORIGIN_LAT, ORIGIN_LON = 42.338926939992874, -71.08678413327202
     TARGET_MILES = 4
-    TARGET_METERS = TARGET_MILES * 1609.34
- 
-    # load the street map
-    G = get_and_set(PLACE, lambda: init_graph(PLACE, "place"))
-    print("map loaded")
+    main(PLACE, ORIGIN_LAT, ORIGIN_LON, TARGET_MILES)
 
- 
-    # find the nearest graph node to our starting coordinates
-    origin_node = ox.nearest_nodes(G, ORIGIN_LON, ORIGIN_LAT)
- 
-    # get all POIs and snap them to graph nodes
-    poi_nodes = get_and_set(f'pois{PLACE}',lambda: get_pois_nodes(PLACE))
-    print(f"found {len(set(poi_nodes))} unique POIS nodes")
- 
-    # run simulated annealing to find a good route
-    print("trying to ptimize route with simulated annealing...")
-    best_route, best_waypoints, best_score = simulated_annealing(
-        G, origin_node, poi_nodes, TARGET_METERS
-    )
- 
-    # print results
-    final_length = get_route_length(G, best_route)
-    print()
-    print("route found")
-    print(f"target:  {TARGET_METERS:.0f} m  ({TARGET_MILES} miles)")
-    print(f"actual:  {final_length:.0f} m  ({final_length/1609.34:.2f} miles)")
-    print(f"error:   {abs(final_length - TARGET_METERS):.0f} m")
-    print(f"stops:   {len(best_waypoints)} waypoints")
-    print(f"score:   {best_score:.1f}")
- 
-    # show the route on a map
-    plot_route(G, best_route, origin_node, best_waypoints, poi_nodes, f"best route")
- 
