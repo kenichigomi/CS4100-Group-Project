@@ -265,7 +265,9 @@ def simulated_annealing(G, start_node, all_poi_nodes, target_distance):
     # SA parameters
     temperature = 1000.0   
     decay = 0.995          
-    max_steps = 1000       
+    max_steps = 1000
+    score_list = list()
+    route_list = list()
  
     # start with 3 random POI waypoints
     current_waypoints = random.sample(all_poi_nodes, min(3, len(all_poi_nodes)))
@@ -282,6 +284,9 @@ def simulated_annealing(G, start_node, all_poi_nodes, target_distance):
     best_waypoints = list(current_waypoints)
     best_route = list(current_route)
     best_score = current_score
+    score_list.append(current_score)
+    route_list.append(current_route)
+    
  
     for step in range(max_steps):
  
@@ -295,6 +300,10 @@ def simulated_annealing(G, start_node, all_poi_nodes, target_distance):
         new_len = get_route_length(G, new_route)
         new_score = score_route(new_waypoints, new_len,
                                 target_distance, all_poi_nodes, G)
+        
+        # save route and score at current step
+        score_list.append(new_score)
+        route_list.append(new_route)
  
         # decide whether to accept the new route
         # score_route returns higher = better, so flip the sign for SA
@@ -327,7 +336,7 @@ def simulated_annealing(G, start_node, all_poi_nodes, target_distance):
             print(f"step {step+1}: T={temperature:.1f}, "
                   f"route={new_len:.0f}m, score={current_score:.1f}")
  
-    return best_route, best_waypoints, best_score
+    return best_route, best_waypoints, best_score, score_list, route_list
  
  
 
