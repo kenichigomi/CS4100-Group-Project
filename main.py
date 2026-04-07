@@ -1,3 +1,5 @@
+import matplotlib.pyplot as plt
+from cache_example import get_and_set
 import osmnx as ox 
 import networkx as nx
 import random 
@@ -35,6 +37,9 @@ def get_pois(place: str) -> list:
 
     return pois
 
+def get_pois_nodes(PLACE: str) -> list:
+    all_pois = get_pois(PLACE)
+    return [ox.nearest_nodes(G, lon, lat) for lat, lon in all_pois]
 
 def build_route(G, origin, pois: list) -> list:
     """
@@ -234,8 +239,9 @@ def get_neighbor(waypoints, all_pois):
         moves.append("add")
     if len(neighbor) > 1:
         moves.append("remove")
+        moves.append("swap_two")
     if neighbor and unused_pois:
-        moves.append("swap")
+        moves.append("swap_with_new")
  
     move = random.choice(moves)
  
@@ -244,11 +250,15 @@ def get_neighbor(waypoints, all_pois):
  
     elif move == "remove":
         neighbor.pop(random.randrange(len(neighbor)))
- 
-    elif move == "swap":
+    elif move == "swap_two":
+        first_idx = random.randrange(len(neighbor))
+        second_idx = random.randrange(len(neighbor))
+        neighbor[first_idx], neighbor[second_idx] = neighbor[second_idx], neighbor[first_idx]
+
+    elif move == "swap_with_new":
         i = random.randrange(len(neighbor))
         neighbor[i] = random.choice(unused_pois)
- 
+    print('chose move', move)
     return neighbor
  
  
@@ -282,6 +292,7 @@ def simulated_annealing(G, start_node, all_poi_nodes, target_distance):
     best_waypoints = list(current_waypoints)
     best_route = list(current_route)
     best_score = current_score
+    scores = []
  
     for step in range(max_steps):
  
@@ -304,14 +315,15 @@ def simulated_annealing(G, start_node, all_poi_nodes, target_distance):
             # new route scored higher (better) — always accept
             accept = True
         else:
-            # new route is worse — accept with decreasing probability
             probability = math.exp(-delta / temperature)
             accept = random.random() < probability
+            print('new route is worse — accept with decreasing probability', probability, accept)
  
         if accept:
             current_waypoints = new_waypoints
             current_route = new_route
             current_score = new_score
+            # plot_route(G, best_route, origin_node, best_waypoints, poi_nodes, f"{}")
  
         # update best if this is the highest score we've seen
         if current_score > best_score:
@@ -321,18 +333,22 @@ def simulated_annealing(G, start_node, all_poi_nodes, target_distance):
  
         # cool down the temperature
         temperature *= decay
+        scores.append(current_score)
  
         # print progress every 200 steps
         if (step + 1) % 200 == 0:
             print(f"step {step+1}: T={temperature:.1f}, "
                   f"route={new_len:.0f}m, score={current_score:.1f}")
- 
+        if step % 50:
+            plt.plot(scores)
+            plt.savefig('scores.png')
+            plt.close()
     return best_route, best_waypoints, best_score
  
  
 
 # visualizing the graph 
-def plot_route(G, route, origin_node, waypoint_nodes, poi_nodes):
+def plot_route(G, route, origin_node, waypoint_nodes, poi_nodes, name):
     """Plot the route on the map.
     Green = start, red = visited POIs, blue = route path.
     """
@@ -345,26 +361,31 @@ def plot_route(G, route, origin_node, waypoint_nodes, poi_nodes):
         else:
             node_colors.append("none")
  
-    ox.plot_graph_route(
-        G, route,
-        route_color="blue",
-        route_linewidth=4,
-        node_color=node_colors,
-        node_size=20,
-        bgcolor="white",
-    )
- 
+        ox.plot_graph_route(
+            G, route,
+            route_color="blue",
+            route_linewidth=4,
+            node_color=node_colors,
+            node_size=20,
+            bgcolor="white",
+            close=True,
+            filepath=name, 
+            file_format='png'
+        )
+
+
  
 # main command
 if __name__ == "__main__":
  
     PLACE = "Boston, Massachusetts, USA"
     ORIGIN_LAT, ORIGIN_LON = 42.3601, -71.0589
+    ORIGIN_LAT, ORIGIN_LON = 42.338926939992874, -71.08678413327202
     TARGET_MILES = 4
     TARGET_METERS = TARGET_MILES * 1609.34
  
     # load the street map
-    G = init_graph(PLACE, "place")
+    G = get_and_set(PLACE, lambda: init_graph(PLACE, "place"))
     print("map loaded")
 
  
@@ -372,9 +393,8 @@ if __name__ == "__main__":
     origin_node = ox.nearest_nodes(G, ORIGIN_LON, ORIGIN_LAT)
  
     # get all POIs and snap them to graph nodes
-    all_pois = get_pois(PLACE)
-    poi_nodes = [ox.nearest_nodes(G, lon, lat) for lat, lon in all_pois]
-    print(f"found {len(all_pois)} POIs and {len(set(poi_nodes))} unique nodes")
+    poi_nodes = get_and_set(f'pois{PLACE}',lambda: get_pois_nodes(PLACE))
+    print(f"found {len(set(poi_nodes))} unique POIS nodes")
  
     # run simulated annealing to find a good route
     print("trying to ptimize route with simulated annealing...")
@@ -393,5 +413,5 @@ if __name__ == "__main__":
     print(f"score:   {best_score:.1f}")
  
     # show the route on a map
-    plot_route(G, best_route, origin_node, best_waypoints, poi_nodes)
+    plot_route(G, best_route, origin_node, best_waypoints, poi_nodes, f"best route")
  
