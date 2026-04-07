@@ -173,8 +173,8 @@ def heuristic(G, u, v):
     A* heuristic: admissible bc the straight-line distance is always <= the actual walking distance, 
     so A* will find the true shortest path.
     """
-    dx = (G.nodes[u]["x"] - G.nodes[v]["x"]) * 111_320  # lon degrees -> meters
-    dy = (G.nodes[u]["y"] - G.nodes[v]["y"]) * 110_540  # lat degrees -> meters
+    dx = (G.nodes[u]["x"] - G.nodes[v]["x"]) * 111_320  
+    dy = (G.nodes[u]["y"] - G.nodes[v]["y"]) * 110_540 
     return math.sqrt(dx**2 + dy**2)
  
  
@@ -223,7 +223,7 @@ def get_neighbor(waypoints, all_pois):
     randomly chooses a move:
       - add a new POI to the route
       - remove a POI from the route
-      - swap one POI for a different one
+      - or swap one POI for a different one
     """
     neighbor = list(waypoints)  # copy so we don't change the original
     unused_pois = [p for p in all_pois if p not in neighbor]
@@ -256,9 +256,9 @@ def simulated_annealing(G, start_node, all_poi_nodes, target_distance):
     """use simulated annealing to find a route close to the target distance
  
     start with a random set of waypoints and at, each step, make a small 
-    change (add/remove/swap a waypoint).
-    if the new route is better, keep it.
-    ff worse, keep it anyway with probability e^(-delta/T).
+    change (add/remove/swap a waypoint)
+    if the new route is better, keep it
+    if worse, keep it anyway with probability e^(-delta/T)
     - when T is high, we accept bad moves often and model explores widely
     - When T is low, we only accept improvements
     """
@@ -301,10 +301,10 @@ def simulated_annealing(G, start_node, all_poi_nodes, target_distance):
         delta = current_score - new_score  # positive means new is worse
  
         if delta <= 0:
-            # new route scored higher (better) — always accept
+            # new route scored higher so always accept
             accept = True
         else:
-            # new route is worse — accept with decreasing probability
+            # new route is worse so accept with decreasing probability
             probability = math.exp(-delta / temperature)
             accept = random.random() < probability
  
@@ -377,7 +377,7 @@ if __name__ == "__main__":
     print(f"found {len(all_pois)} POIs and {len(set(poi_nodes))} unique nodes")
  
     # run simulated annealing to find a good route
-    print("trying to ptimize route with simulated annealing...")
+    print("trying to optimize route with simulated annealing")
     best_route, best_waypoints, best_score = simulated_annealing(
         G, origin_node, poi_nodes, TARGET_METERS
     )
@@ -386,11 +386,11 @@ if __name__ == "__main__":
     final_length = get_route_length(G, best_route)
     print()
     print("route found")
-    print(f"target:  {TARGET_METERS:.0f} m  ({TARGET_MILES} miles)")
-    print(f"actual:  {final_length:.0f} m  ({final_length/1609.34:.2f} miles)")
-    print(f"error:   {abs(final_length - TARGET_METERS):.0f} m")
-    print(f"stops:   {len(best_waypoints)} waypoints")
-    print(f"score:   {best_score:.1f}")
+    print(f"target: {TARGET_METERS:.0f}m ({TARGET_MILES} miles)")
+    print(f"actual: {final_length:.0f}m ({final_length/1609.34:.2f} miles)")
+    print(f"error:  {abs(final_length - TARGET_METERS):.0f}m")
+    print(f"stops:  {len(best_waypoints)} waypoints")
+    print(f"score:  {best_score:.1f}")
  
     # show the route on a map
     plot_route(G, best_route, origin_node, best_waypoints, poi_nodes)
