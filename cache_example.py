@@ -20,19 +20,9 @@ def get_cache(key):
 
 
 def get_and_set(key, callback):
-    key = "boston cache"
     value = get_cache(key)
     if value is None:
         value = callback()
         set_cache(key, value)
     return value
 
-
-G = get_and_set(
-    "boston",
-    lambda: ox.graph.graph_from_place(
-        "Boston, Massachusetts, USA", network_type="walk"
-    ),
-)
-print(G)
-fig, ax = ox.plot.plot_graph(G)
