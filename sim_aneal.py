@@ -63,13 +63,14 @@ def build_route(G, origin, pois: list) -> list:
 
 
 # ifes part for scoring a route
-def score_route(waypoints: list, path_len: float, target_len: float, all_pois: list, G) -> float:
+def score_route(waypoints: list, path_len: float, target_len: float, all_pois: list, G, route) -> float:
     """
     waypoints: list of nodes choosen for the route
     path_len: the actual path length of the route
     target_len: the intended path length of the route 
     all_pois: all points of interests in the graph 
     G: the entire graph 
+    route: current route on the graph
     """
 
     score = 0.0
@@ -93,6 +94,14 @@ def score_route(waypoints: list, path_len: float, target_len: float, all_pois: l
                 min_dist = dist
         
         score -= min_dist # only care about the poi that are closest to the waypoint 
+    
+    # repeated edge scoring
+    edge_counts = {}
+    for u, v in zip(route[:-1], route[1:]):
+        key = (min(u,v), max(u,v))
+        edge_counts[key] = edge_counts.get(key, 0) + 1
+    repeated = sum(c - 1 for c in edge_counts.values() if c > 1)
+    score -= repeated * 500
 
     # how close the route is to the intended distance 
     len_error = abs(target_len - path_len) / path_len
@@ -124,7 +133,7 @@ def score_route(waypoints: list, path_len: float, target_len: float, all_pois: l
 # print("Route Length Found!")
 
 # print("Calculating score....")
-# score = score_route(waypoints, actual_route_len, target_len, poi_nodes, G)
+# score = score_route(waypoints, actual_route_len, target_len, poi_nodes, G, route)
 
 # print("************************************")
 # print("Finished! Metrics:")
@@ -132,11 +141,11 @@ def score_route(waypoints: list, path_len: float, target_len: float, all_pois: l
 # print("Desired Length:", target_len)
 # print("Actual Length:", actual_route_len)
 
-# # Buiding a visual for graph and route:
+# Buiding a visual for graph and route:
 
-# # starting node is green 
-# # poi are red (can add specific color for what kind of POI it is and add a key)
-# # route line is blue 
+# starting node is green 
+# poi are red (can add specific color for what kind of POI it is and add a key)
+# route line is blue 
 
 # node_colors = []
 # for node in G.nodes():
@@ -268,7 +277,12 @@ def simulated_annealing(G, start_node, all_poi_nodes, target_distance):
     # SA parameters
     temperature = 1000.0   
     decay = 0.995          
-    max_steps = 1000       
+    max_steps = 1000
+
+    # random restart params
+    heat = 0
+    restart_heat = 100
+
  
     # start with 3 random POI waypoints
     current_waypoints = random.sample(all_poi_nodes, min(3, len(all_poi_nodes)))
@@ -279,7 +293,7 @@ def simulated_annealing(G, start_node, all_poi_nodes, target_distance):
  
     current_len = get_route_length(G, current_route)
     current_score = score_route(current_waypoints, current_len,
-                                target_distance, all_poi_nodes, G)
+                                target_distance, all_poi_nodes, G, current_route)
  
     # keep track of the best route we've ever seen
     best_waypoints = list(current_waypoints)
@@ -297,7 +311,7 @@ def simulated_annealing(G, start_node, all_poi_nodes, target_distance):
  
         new_len = get_route_length(G, new_route)
         new_score = score_route(new_waypoints, new_len,
-                                target_distance, all_poi_nodes, G)
+                                target_distance, all_poi_nodes, G, new_route)
  
         # decide whether to accept the new route
         # score_route returns higher = better, so flip the sign for SA
@@ -321,6 +335,15 @@ def simulated_annealing(G, start_node, all_poi_nodes, target_distance):
             best_waypoints = list(current_waypoints)
             best_route = list(current_route)
             best_score = current_score
+            heat = 0
+        else:
+            heat += 1
+
+        # check if restart is needed
+        if heat >= restart_heat:
+            temperature = temperature + 200
+            heat = 0
+            print("Restarted")
  
         # cool down the temperature
         temperature *= decay
