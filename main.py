@@ -17,7 +17,7 @@ if __name__ == "__main__":
     TARGET_METERS = TARGET_MILES * 1609.34
  
     # load the street map
-    G = sa.init_graph(PLACE, "place")
+    G = get_and_set(PLACE,lambda: sa.init_graph(PLACE, "place"))
     print("map loaded")
     print("contraction started...")
     G_prime = con.apply_contraction(G, max_rank=5)
@@ -26,9 +26,8 @@ if __name__ == "__main__":
     origin_node = ox.nearest_nodes(G, ORIGIN_LON, ORIGIN_LAT)
     
     # get all POIs and snap them to graph nodes
-    all_pois = sa.get_pois(PLACE)
-    poi_nodes = [ox.nearest_nodes(G, lon, lat) for lat, lon in all_pois]
-    print(f"found {len(all_pois)} POIs and {len(set(poi_nodes))} unique nodes")
+    poi_nodes = get_and_set("pois"+PLACE, lambda: sa.get_pois_nodes(PLACE, G))
+    print(f"found {len(set(poi_nodes))} unique pois nodes")
     
     # run simulated annealing to find a good route
     print("trying to optimize route with simulated annealing...")

@@ -35,6 +35,9 @@ def get_pois(place: str) -> list:
 
     return pois
 
+def get_pois_nodes(place: str, G) -> list:
+    all_pois = get_pois(place)
+    return [ox.nearest_nodes(G, lon, lat) for lat, lon in all_pois]
 
 def build_route(G, origin, pois: list) -> list:
     """
