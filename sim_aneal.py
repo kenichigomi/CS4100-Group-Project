@@ -371,7 +371,7 @@ def plot_route(G, route, origin_node, waypoint_nodes, poi_nodes):
         else:
             node_colors.append("none")
  
-    ox.plot_graph_route(
+    fig, axes = ox.plot_graph_route(
         G, route,
         route_color="blue",
         route_linewidth=4,
@@ -379,6 +379,10 @@ def plot_route(G, route, origin_node, waypoint_nodes, poi_nodes):
         node_size=20,
         bgcolor="white",
     )
+
+    return fig, axes 
+
+     
 
 
  

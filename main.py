@@ -46,8 +46,9 @@ if __name__ == "__main__":
     print(f"score:   {best_score:.1f}")
     
     # show the route on a map
-    sa.plot_route(G, best_route, origin_node, best_waypoints, poi_nodes)
+    image, axes = sa.plot_route(G, best_route, origin_node, best_waypoints, poi_nodes)
     end_time_G = time.time() 
+    image.savefig("route.png")
 
     # Now trying with contraction Heirchies
 
