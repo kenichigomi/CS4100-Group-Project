@@ -1,3 +1,4 @@
+from matplotlib import pyplot as plt
 import osmnx as ox 
 import networkx as nx
 import random 
@@ -299,6 +300,12 @@ def simulated_annealing(G, start_node, all_poi_nodes, target_distance):
     best_waypoints = list(current_waypoints)
     best_route = list(current_route)
     best_score = current_score
+    best_scores = []
+    temperatures = []
+    probabilities = []
+    len_waypoints = []
+    new_scores = []
+
  
     for step in range(max_steps):
  
@@ -352,7 +359,46 @@ def simulated_annealing(G, start_node, all_poi_nodes, target_distance):
         if (step + 1) % 200 == 0:
             print(f"step {step+1}: T={temperature:.1f}, "
                   f"route={new_len:.0f}m, score={current_score:.1f}")
+        best_scores.append(best_score)
+        new_scores.append(new_score)
+        temperatures.append(temperature)
+        len_waypoints.append(len(new_waypoints))
+        probabilities.append(probability)
+    fig, axes = plt.subplots(2, 3, figsize=(15, 8))
  
+    axes[0, 0].plot(best_scores, linewidth=0.8)
+    axes[0, 0].set_title("Best Score")
+    axes[0, 0].set_xlabel("Step")
+    axes[0, 0].set_ylabel("Score")
+ 
+    axes[0, 1].plot(new_scores,linewidth=0.8, color="orange")
+    axes[0, 1].set_title("Candidate Solution Scores")
+    axes[0, 1].set_xlabel("Step")
+    axes[0, 1].set_ylabel("Score")
+  
+    axes[1, 0].hist(len_waypoints, linewidth=0.8, color="green")
+    axes[1, 0].set_title("Waypoints Relative Frequency")
+    axes[1, 0].set_xlabel("# of Waypoints")
+    axes[1, 0].set_ylabel("Count")
+    axes[0, 2].plot(temperatures, linewidth=0.8, color="red")
+    axes[0, 2].set_title("Temperature")
+    axes[0, 2].set_xlabel("Step")
+    axes[0, 2].set_ylabel("T")
+
+    axes[1, 1].plot(probabilities, linewidth=0.8, color="purple", alpha=0.6)
+    axes[1, 1].set_title("Acceptance Probability")
+    axes[1, 1].set_xlabel("Step")
+    axes[1, 1].set_ylabel("P")
+ 
+    axes[1, 2].plot(best_scores, linewidth=0.8, label="Best")
+    axes[1, 2].plot(new_scores, linewidth=0.8, alpha=0.5, label="Current")
+    axes[1, 2].set_title("Best vs Candidate Score")
+    axes[1, 2].set_xlabel("Step")
+    axes[1, 2].legend()
+ 
+    fig.tight_layout()
+    plt.savefig("graphs.png", dpi=150)
+    # plt.show()
     return best_route, best_waypoints, best_score
  
  
