@@ -110,75 +110,7 @@ def score_route(waypoints: list, path_len: float, target_len: float, all_pois: l
     
     return score
 
-# testing code above
-# print("Starting....")
-# G = init_graph("Boston, Massachusetts, USA", "place")
-# origin_lat, origin_lon = 42.3601, -71.0589
-# origin_node = ox.nearest_nodes(G, origin_lon, origin_lat)
-# target_len = 6437.38 # in meters (approx. 4 miles)
-
-# all_pois = get_pois("Boston, Massachusetts, USA")
-# print("Number of Points of Interest:", len(all_pois))
-# poi_nodes = [ox.nearest_nodes(G, lon, lat) for lat, lon in all_pois] # converting to long,lat
-# waypoints = random.sample(poi_nodes, 3) 
-
-# print("Building route.....")
-# route = build_route(G, origin_node, waypoints)
-# print("Route building finished!")
-
-# # finding actual route length 
-# print("Finding length of route....")
-# actual_route_len = 0
-# for u,v in zip(route[:-1], route[1:]):
-#     actual_route_len += G[u][v][0]["length"]
-# print("Route Length Found!")
-
-# print("Calculating score....")
-# score = score_route(waypoints, actual_route_len, target_len, poi_nodes, G, route)
-
-# print("************************************")
-# print("Finished! Metrics:")
-# print("Route Score:", score)
-# print("Desired Length:", target_len)
-# print("Actual Length:", actual_route_len)
-
-# Buiding a visual for graph and route:
-
-# starting node is green 
-# poi are red (can add specific color for what kind of POI it is and add a key)
-# route line is blue 
-
-# node_colors = []
-# for node in G.nodes():
-#     if node in poi_nodes and node in waypoints:
-#         node_colors.append("red")
-#     elif node == origin_node:
-#         node_colors.append("green")
-#     else:
-#         node_colors.append("none")
-
-
-# ox.plot_graph_route(
-#     G, 
-#     route,
-#     route_color="blue",      
-#     route_linewidth=4, 
-#     node_color = node_colors,      
-#     node_size=20,            
-#     bgcolor="white"          
-# )
-
-# TODO: ignore points that are a certain distance (over half the target distance)
-# TODO: When picking waypoints out of POI's, pick 2 way points that are closest to approx. 1/3 of the distance
-# TODO: we may be calculating the length of the route incorrectly.....
-
-
-# New idea:
-# TODO: Heuristic is how far this state is from the goal distance 
-# always add a node if we are under the distance we want, get rid of a node if we are over
-# the distance we want
-# First, we start by placing 1 poi, then we do what was mentioned above. We keep iterating
-# the state using local search until we reach a distance that is "close enough" using a buffer
+# sim aneal implementation
 
 def heuristic(G, u, v):
     """straight-line distance between two nodes in meters.
@@ -324,6 +256,7 @@ def simulated_annealing(G, start_node, all_poi_nodes, target_distance):
         # score_route returns higher = better, so flip the sign for SA
         delta = current_score - new_score  # positive means new is worse
  
+        probability = 1.0
         if delta <= 0:
             # new route scored higher (better) — always accept
             accept = True

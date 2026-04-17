@@ -1,3 +1,8 @@
+# look in the parent directory for imports
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+
 import matplotlib.pyplot as plt
 from cache_example import get_and_set
 import osmnx as ox 
