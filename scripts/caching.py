@@ -8,14 +8,14 @@ import matplotlib as plt
 
 def set_cache(key, data):
     # Pickling (serializing) the data to a file
-    with open(f"{key}.pkl", "wb") as file:
+    with open(f"/caches/{key}.pkl", "wb") as file:
         pickle.dump(data, file)
 
 
 def get_cache(key):
-    if not os.path.exists(f"{key}.pkl"):
+    if not os.path.exists(f"/caches/{key}.pkl"):
         return None
-    with open(f"{key}.pkl", "rb") as file:
+    with open(f"/caches/{key}.pkl", "rb") as file:
         return pickle.load(file)
 
 

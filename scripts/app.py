@@ -12,7 +12,7 @@ from shiny import App, reactive, render, ui
 import main as main
 import osmnx as ox
 import sim_aneal as sa
-from cache_example import get_and_set
+from caching import get_and_set
 import os
 import time
 
