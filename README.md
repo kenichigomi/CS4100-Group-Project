@@ -9,24 +9,14 @@
 # How to run the project
 ## 1.) Make sure to clone repository
 ```
-git clone [repo_name]
-cd [repo_name]
+git clone https://github.com/kenichigomi/CS4100-Group-Project.git
+cd CS4100-Group-Project/
 ```
 ## 2.) Make sure python 3.14 is installed.
 
 ## 3.) Install libraries/dependencies.
 ```
-pip install [library_name]
-
-osmnx
-networkx
-matplotlib
-random
-math
-time
-shiny
-sys
-os
+pip install osmnx networkx matplotlib shiny
 ```
 
 ## 4.) You can either run the Shiny app, or simply run main.py.
