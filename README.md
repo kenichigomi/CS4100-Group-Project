@@ -7,7 +7,7 @@
 - Kenichi Gomi
 
 # How to run the project
-## 1.) Make sure to clone repository
+## 1.) Clone repository
 ```
 git clone https://github.com/kenichigomi/CS4100-Group-Project.git
 cd CS4100-Group-Project/
@@ -25,7 +25,7 @@ If running the Shiny app, type in terminal:
 ```
 shiny run app.py
 ```
-Else run main.py after modifying the variables.
+If you want to just run from command line run `python3 main.py` after modifying the variables.
 ```
 PLACE (string): City, State, Country of interest (ex. Boston, Massachusetts, USA)
 ORIGIN_LAT, ORIGIN_LON (float, float): Latitude and Longitude of starting location in above PLACE
