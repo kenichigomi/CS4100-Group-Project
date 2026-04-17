@@ -59,7 +59,6 @@ python main.py
   caching.py                 # helper functions to cache graph data
   contraction.py            
   main.py                    # runs model
-  osmnx_helpers.py
   sim_aneal.py               # contains sim aneal function and associated helper functions
 ```
 
