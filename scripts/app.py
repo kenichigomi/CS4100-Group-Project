@@ -62,16 +62,38 @@ app_ui = ui.page_navbar(
                 ui.div(
                     ui.card(
                         ui.card_header("Background", style="background-color: #C2EBEF"),
-                        ui.p("Mapping technology is very good at making routes from point A to point B. However for runners, " \
-                        "usually the goal is to start and end a run at the same point. We found that there were not many resources " \
-                        "that would make a route this way in a loop, so we decided to make an AI agent that would solve this problem. " \
-                        "Running in cities can also be very hectic, so we wanted our agent to avoid as many crosswalks or interruptions " \
-                        "during the run as possible, but also allowing the agent to explore places of interest such as monuments or water " \
-                        "fountains.")
+                        ui.p("Creating a good running route takes time. We can use Strava, " \
+                        "an app that shares GPS data from users to plot a route to base our own routes off of, "
+                        "or Google Maps to draw a route - but each come with their own problems. Strava doesn't have a " \
+                        "good feature to search for a particular distances, and Google Maps forces the user to " \
+                        "drag and drop markers to create a loop. Our research led us to an existing route creator " \
+                        "called 'TrailRouter', but this program was optimized for plotting a route near green spaces (parks, etc.)"
+                        " and would not always create a convenient running route. We introduce the idea of a looped route here, "
+                        "as we can run on new paths for the entirety of the route rather than running on the same path twice "
+                        "(out-and-back). This allows for greater exploration of the city, and an overall more enjoyable experience. We wanted to use AI methods to create an agent that could develop a looping route given a distance that the user wants to run, a city to create the route in, a starting location at which the route would also end at (thus closing the loop), and potential waypoints that the route could go through. These waypoints included public amenities and touristy spots, providing the runner with either resources (water, bathroom) or a nice view (scenery, or maybe some cool building). We hope that with this model, users will be able to cut down on time spent creating a running route and have a more enjoyable time outside.")
                     ),
                     ui.card(
                         ui.card_header("Methodology", style="background-color: #C2EBEF"),
-                        ui.p()
+                        ui.p("Street map data is pulled from OpenStreetMap using OSMnx, where intersections are represented as " \
+                        "nodes and street segments as directed edges with distance weights. To bias the search toward runner-friendly " \
+                        "paths, a contraction preprocessing step assigns each edge a rank based on its road type. For example, footways "
+                        "and pedestrian paths receive a rank of 1, residential streets a rank of 2, and motorways and alleys a rank of 8. " \
+                        "Edges exceeding a rank threshold of 5 are removed from the graph entirely, producing a reduced graph G' that " \
+                        "filters out roads unsuitable for running. Candidate waypoints, including parks, fountains, monuments, and cafes, " \
+                        "are queried from OSM's feature API and snapped to their nearest graph node. Routes are constructed by chaining A* " \
+                        "shortest-path segments between consecutive waypoints into a closed loop returning to the origin, using an admissible" \
+                        " Euclidean heuristic that converts degree differences in latitude and longitude to meters. The system then optimizes " \
+                        "the set of waypoints using simulated annealing, beginning with a random sample of 3 POI waypoints and iteratively " \
+                        "proposing neighbor states by adding, removing, or swapping a single waypoint, with the waypoint count capped at 6. " \
+                        "Each candidate route is scored by penalizing waypoint distance from the nearest POI, edge repetition weighted at -500 " \
+                        "per repeated edge, and normalized deviation from the target distance weighted at -1000. Transitions to worse states " \
+                        "are accepted with probability P = e^{-Delta/T}, where T decays exponentially at alpha = 0.995$ per step over " \
+                        "1,000 total iterations starting at T = 1000, using random restarts to reheat T by 200 after 100 consecutive " \
+                        "steps without improvement. The main libraries used are OSMnx, NetworkX, Matplotlib, and Shiny for Python for the frontend. " \
+                        "Some limitations of this system include its reliance on OpenStreetMap data being complete for the target city, and " \
+                        "the fact that the returned route may deviate from the desired distance by a few meters, since the model returns the " \
+                        "closest result found after 1,000 iterations. The system is also currently limited to walking networks, with no support "
+                        "for cycling or driving routes.  ")
                     ),
                     ui.div(
                         ui.card(
@@ -88,9 +110,7 @@ app_ui = ui.page_navbar(
                         ui.card(
                             ui.card_header("Links", style="background-color: #C2EBEF"),
                             ui.tags.ul(
-                                ui.tags.li(ui.tags.a("Github", href="https://github.com/kenichigomi/CS4100-Group-Project")),
-                                ui.tags.li("Insert link for PDF paper here when completed"),
-                                ui.tags.li("Insert link for slideshow when completed")
+                                ui.tags.li(ui.tags.a("Github", href="https://github.com/kenichigomi/CS4100-Group-Project"))
                             ),
                             width="50%",
                             style="flex: 1;"
@@ -135,7 +155,3 @@ def server(input, output, session):
  
 
 app = App(app_ui, server)
-
-
-
-
